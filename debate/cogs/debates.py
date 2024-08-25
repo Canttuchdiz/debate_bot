@@ -2,7 +2,7 @@ import asyncio
 import datetime
 
 import discord
-from discord import app_commands, Interaction, User, Member, Color, Embed, CategoryChannel
+from discord import app_commands, Interaction, Member, Color, Embed, ChannelType
 from discord.ext import commands
 from debate.utils.extentsions import PrismaExt
 from discord.types.snowflake import Snowflake
@@ -78,6 +78,23 @@ class Debates(commands.Cog):
             }
         )
         await interaction.response.send_message("Record removed!")
+
+    @app_commands.command(name="debate-session", description="Makes a channel for a debate")
+    async def debate_session(self, interaction: Interaction, debater1: Member, debater2: Member, topic: str) -> None:
+        # Maybe add config file down the line
+        debate_category = discord.utils.get(interaction.guild.categories, id=1277016557993857075)
+        overwrites = {
+            interaction.guild.default_role: discord.PermissionOverwrite(send_messages=False),
+            debater1: discord.PermissionOverwrite(send_messages=True),
+            debater2: discord.PermissionOverwrite(send_messages=True),
+            interaction.guild.get_role(1276165715812028416): discord.PermissionOverwrite(send_messages=True)
+        }
+        debate_channel = await debate_category.create_text_channel(name=topic, overwrites=overwrites)
+        description = f"Topic: {topic}\nDebater 1: {debater1.mention}\nDebater 2: {debater2.mention}"
+        embed = Embed(title="Debate Info", description=description, color=Color.teal())
+        await debate_channel.send(embed=embed)
+        await interaction.response.send_message(f"*Navigate to* <#{debate_channel.id}>:"
+                                                f" {debater1.mention} **vs** {debater2.mention}")
 
 
 async def setup(bot):
